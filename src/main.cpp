@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include "wifi.hpp"
+#include "web.hpp"
 
 String inputString = "";
 bool stringComplete = false;
@@ -8,6 +10,11 @@ bool stringComplete = false;
 void setup() {
   Serial.begin(9600);
   inputString.reserve(200);
+
+  if (connectWifi()) {
+    launchServer();
+  }
+
   Serial.println("Type 'help' for the full command list.");
 }
 
@@ -38,30 +45,33 @@ void loop() {
     // Exécuter la commande
     if (command == "help") {
       Serial.println("Available commands :");
-      Serial.println("- help :      Display this help");
-      Serial.println("- wifi-scan : Scan available wifi networks");
+      Serial.println("- help :                        Display this help");
+      Serial.println("- wifi-scan :                   Scan available wifi networks");
+      Serial.println("- wifi-connect :                Connect to the wifi");
+      Serial.println("- wifi-conf <SSID> <password> : Configure wifi");
     }
     else if (command == "wifi-scan") {
-      Serial.println("Looking for available wifi ...");
-      WiFi.mode(WIFI_STA);
-      WiFi.disconnect();
-      delay(100);
-
-      int n = WiFi.scanNetworks();
-      if (n==0) {
-        Serial.println("No wifi network found.");
-      } else {
-        for (int i = 0; i<n; i++) {
-          Serial.print(i+1);
-          Serial.print(": ");
-          Serial.print(WiFi.SSID(i));
-          Serial.print(" (");
-          Serial.print(WiFi.RSSI(i));
-          Serial.println(" dBm)");
-          delay(10);
-        }
+      stopServer();
+      currentWifi();
+      listWifi();
+    }
+    else if (command == "wifi-connect") {
+      currentWifi();
+      if (connectWifi()) {
+        launchServer();
+      }
+    }
+    else if (command == "wifi-conf") {
+      int espace = arguments.indexOf(' ');
+      if (espace<0) {
+        Serial.println("ERROR: wifi-conf takes 2 arguments");
       }
 
+      String ssid = arguments.substring(0, espace);
+      String password = arguments.substring(espace + 1);
+
+      configureWifi(ssid, password);
+      connectWifi();
     }
     else {
       Serial.print("Unknown command : ");
@@ -75,5 +85,7 @@ void loop() {
     inputString = "";
     stringComplete = false;
   }
+
+  server->handleClient();
 }
 
