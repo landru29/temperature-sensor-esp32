@@ -1,18 +1,28 @@
+#ifndef TESTING
+
 #include <Arduino.h>
 #include <WiFi.h>
 #include "wifi.hpp"
 #include "web.hpp"
+#include "command.hpp"
+#include "sensor.hpp"
 
 String inputString = "";
 bool stringComplete = false;
+HttpServer *requestHandler;
+Sensor *sensor;
 
 
 void setup() {
   Serial.begin(9600);
+
+  sensor = new Sensor();
+  requestHandler = new HttpServer(sensor);
+
   inputString.reserve(200);
 
   if (connectWifi()) {
-    launchServer();
+    requestHandler->launchServer();
   }
 
   Serial.println("Type 'help' for the full command list.");
@@ -31,51 +41,38 @@ void loop() {
 
   // Traiter la commande si elle est complète
   if (stringComplete) {
-    // Supprimer les espaces et le retour à la ligne
-    inputString.trim();
-    String command = inputString;
-    String arguments;
+    Command cmd(inputString.c_str());
 
-    int espace = inputString.indexOf(' ');
-    if (espace>0) {
-      command = inputString.substring(0, espace);
-      arguments = inputString.substring(espace + 1);
-    }
-
-    // Exécuter la commande
-    if (command == "help") {
+    if (cmd.getCommand() == "help") {
       Serial.println("Available commands :");
       Serial.println("- help :                        Display this help");
       Serial.println("- wifi-scan :                   Scan available wifi networks");
       Serial.println("- wifi-connect :                Connect to the wifi");
       Serial.println("- wifi-conf <SSID> <password> : Configure wifi");
-    }
-    else if (command == "wifi-scan") {
-      stopServer();
+    } else if (cmd.getCommand() == "wifi-scan") {
+      requestHandler->stopServer();
       currentWifi();
       listWifi();
-    }
-    else if (command == "wifi-connect") {
+    } else if (cmd.getCommand() == "wifi-connect") {
       currentWifi();
       if (connectWifi()) {
-        launchServer();
+        requestHandler->launchServer();
       }
-    }
-    else if (command == "wifi-conf") {
-      int espace = arguments.indexOf(' ');
-      if (espace<0) {
+    } else if (cmd.getCommand() == "wifi-conf") {
+      if (cmd.argumentCount()!=2) {
         Serial.println("ERROR: wifi-conf takes 2 arguments");
+
+        // Réinitialiser pour la prochaine commande
+        inputString = "";
+        stringComplete = false;
+        return;
       }
 
-      String ssid = arguments.substring(0, espace);
-      String password = arguments.substring(espace + 1);
-
-      configureWifi(ssid, password);
+      configureWifi(cmd.nextArgument(), cmd.nextArgument());
       connectWifi();
-    }
-    else {
+    }   else {
       Serial.print("Unknown command : ");
-      Serial.println(command);
+      Serial.println(cmd.getCommand());
       Serial.println("Type 'help' for the full command list.");
     }
 
@@ -86,6 +83,10 @@ void loop() {
     stringComplete = false;
   }
 
-  server->handleClient();
+  requestHandler->handleClient();
 }
-
+#else
+int main(){
+    return 0;
+}
+#endif

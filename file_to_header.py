@@ -4,14 +4,33 @@ import os
 def convert_file_to_header(input_file, output_file, var_name="data"):
     with open(input_file, "rb") as f:
         data = f.read()
+
+    from pathlib import Path
+    Path(output_file).mkdir(parents=True, exist_ok=True)
+
+    canonical_path = os.path.join(output_file, os.path.basename(output_file))
     
-    with open(output_file, "w") as f:
-        f.write(f"#pragma once\n")
-        f.write("#include <Arduino.h>\n\n")
-        f.write(f"const unsigned char {var_name}[] PROGMEM = {{\n")
-        f.write(", ".join(f"0x{b:02x}" for b in data))
-        f.write("\n};\n")
+    with_progmem = False
+
+    max_per_line = 16
+    
+    with open(canonical_path+".cpp", "w") as f:
+        f.write(f"#include \"{os.path.basename(output_file)}.hpp\"\n\n")
+        if with_progmem:
+            f.write("#include <Arduino.h>\n\n")
+        f.write(f"const unsigned char {var_name}[] {'PROGMEM ' if with_progmem else ''}= {{\n")
+        for i in range(0, len(data), max_per_line):
+            ligne = data[i:i + max_per_line]
+            f.write("    ")
+            f.write(", ".join(f"0x{b:02x}" for b in ligne))
+            f.write(",\n" if i + max_per_line < len(data) else "\n};\n")
         f.write(f"const unsigned int {var_name}_len = {len(data)};\n")
+    
+    with open(canonical_path+".hpp", "w") as f:
+        f.write(f"#ifndef __{os.path.basename(output_file).upper()}_H__\n#define __{os.path.basename(output_file).upper()}_H__\n\n")
+        f.write(f"extern const unsigned char {var_name}[];\n")
+        f.write(f"extern const unsigned int {var_name}_len;\n")
+        f.write("\n#endif\n")
 
 if __name__ == "__main__":
     import sys

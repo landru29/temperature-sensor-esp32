@@ -1,3 +1,4 @@
+#ifndef TESTING
 #include "wifi.hpp"
 #include <Arduino.h>
 #include <WiFi.h>
@@ -106,3 +107,4 @@ void currentWifi() {
     Serial.print(password);
     Serial.println("]");
 }
+#endif
