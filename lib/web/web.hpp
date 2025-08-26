@@ -7,7 +7,7 @@
 class HttpServer {
     public:
         HttpServer(Sensor *sensor);
-        void launchServer();
+        void launchServer(const char *hostname);
         void stopServer();
         void handleClient();
     

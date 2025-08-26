@@ -53,19 +53,25 @@
     </div>
 </body>
 <script>
-  fetch("http://%IP%/temperature")
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("Erreur HTTP " + response.status);
-      }
-      return response.json();
-    })
-    .then(data => {
-      const span = document.getElementById("temperature");
-      span.textContent = data.temperature;
-    })
-    .catch(error => {
-      console.error("Erreur lors du fetch :", error);
-    });
+    function fetchTemperature() {
+        fetch("http://%IP%/temperature")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Erreur HTTP " + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const span = document.getElementById("temperature");
+                span.textContent = data.temperature;
+            })
+            .catch(error => {
+                console.error("Erreur lors du fetch :", error);
+            });
+    }
+
+    fetchTemperature();
+
+    setInterval(fetchTemperature, 1000);
 </script>
 </html>

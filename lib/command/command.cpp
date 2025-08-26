@@ -11,7 +11,7 @@ Command::Command(const char *line) {
 
     // find next space and copy command.
     int idx = 0;
-    for (; line[token] != 0 && line[token] != ' ' && idx<MAX_COMMAND_LENGTH; token++) {
+    for (; line[token] != 0 && line[token] != ' ' && line[token] != '\n' && line[token] != '\r' && idx<MAX_COMMAND_LENGTH; token++) {
         this->command[idx++] = line[token];
     }
     this->command[idx] = 0;
@@ -26,14 +26,14 @@ Command::Command(const char *line) {
 
     // skip spaces before
     if (this->arguments[this->argumentIndex] == ' ') {
-        for (; this->arguments[this->argumentIndex] != 0 && this->arguments[this->argumentIndex] == ' '; this->argumentIndex++) {}
+        for (; this->arguments[this->argumentIndex] != 0 && (this->arguments[this->argumentIndex] == ' ' || this->arguments[this->argumentIndex] == '\n' || this->arguments[this->argumentIndex] == '\r'); this->argumentIndex++) {}
     }
 
     // skip spaces after
     token = 0;
     for(; this->arguments[token] != 0; token++) {}
     token--;
-    for (; token >= 0 && this->arguments[token] == ' '; token--) {
+    for (; token >= 0 && (this->arguments[token] == ' ' || this->arguments[token] == '\n' || this->arguments[token] == '\r'); token--) {
         this->arguments[token] = 0; 
     }
 }
@@ -47,7 +47,7 @@ int Command::argumentCount() {
 
     // skip spaces
     if (this->arguments[token] == ' ') {
-        for (; this->arguments[token] != 0 && this->arguments[token] == ' '; token++) {}
+        for (; this->arguments[token] != 0 && (this->arguments[token] == ' ' || this->arguments[token] == '\n' || this->arguments[token] == '\r'); token++) {}
     }
 
     // count spaces
@@ -83,12 +83,12 @@ char* Command::nextArgument() {
 
     // skip spaces
     if (this->arguments[token] == ' ') {
-        for (; this->arguments[token] != 0 && this->arguments[token] == ' '; token++) {}
+        for (; this->arguments[token] != 0 && (this->arguments[token] == ' ' || this->arguments[token] == '\n' || this->arguments[token] == '\r'); token++) {}
     }
 
     // find next space and copy command.
     int idx = 0;
-    for (; this->arguments[token] != 0 && this->arguments[token] != ' ' && idx<MAX_COMMAND_LENGTH; token++) {
+    for (; this->arguments[token] != 0 && this->arguments[token] != ' ' && this->arguments[token] != '\n' && this->arguments[token] != '\r' && idx<MAX_COMMAND_LENGTH; token++) {
         this->currentArgument[idx++] = this->arguments[token];
     }
     this->currentArgument[idx] = 0;
@@ -103,7 +103,7 @@ bool Command::hasArgument() {
 
     // skip spaces
     if (this->arguments[token] == ' ') {
-        for (; this->arguments[token] != 0 && this->arguments[token] == ' '; token++) {}
+        for (; this->arguments[token] != 0 && (this->arguments[token] == ' ' || this->arguments[token] == '\n' || this->arguments[token] == '\r'); token++) {}
     }
 
     return this->arguments[token] != 0;

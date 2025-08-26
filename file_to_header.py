@@ -1,9 +1,12 @@
 import os
 
 
-def convert_file_to_header(input_file, output_file, var_name="data"):
+def convert_file_to_header(input_file, output_file, var_name="data", with_zero=False):
     with open(input_file, "rb") as f:
         data = f.read()
+
+    if with_zero:
+        data = data + b"\x00"
 
     from pathlib import Path
     Path(output_file).mkdir(parents=True, exist_ok=True)
@@ -34,8 +37,8 @@ def convert_file_to_header(input_file, output_file, var_name="data"):
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         print("Usage: python convert_data.py <input_file> <output_file> <var_name>")
         sys.exit(1)
-    convert_file_to_header(sys.argv[1], sys.argv[2], sys.argv[3])
+    convert_file_to_header(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]=='true')
 

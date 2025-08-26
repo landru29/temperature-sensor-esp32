@@ -41,7 +41,7 @@ void configureWifi(String ssid, String password) {
     preferences.end();
 }
 
-bool connectWifi() {
+bool connectWifi(const char* hostname) {
     Preferences preferences;
 
     preferences.begin("wifi-creds", false);
@@ -60,6 +60,7 @@ bool connectWifi() {
     Serial.print("Connecting to wifi ");
     Serial.println(ssid);
 
+    WiFi.setHostname(hostname);
     WiFi.begin(ssid.c_str(), password.c_str());
 
     Serial.println("Waiting response from the network ...");

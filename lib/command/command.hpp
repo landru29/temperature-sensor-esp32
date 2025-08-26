@@ -4,6 +4,8 @@
 #define MAX_COMMAND_LENGTH 100
 #define MAX_ARGUMENTS_LENGTH 300
 
+
+
 class Command {
 public:
     Command(const char *line);
@@ -18,4 +20,6 @@ private:
     char currentArgument[MAX_COMMAND_LENGTH];
     int argumentIndex = 0;
 };
+
+
 #endif

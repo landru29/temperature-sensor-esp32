@@ -1,8 +1,8 @@
 #ifndef TESTING
 #include "web.hpp"
 #include "html.hpp"
+#include "favicon.hpp"
 #include <Arduino.h>
-#include <WiFi.h>
 #include "sensor.hpp"
 
 
@@ -11,24 +11,32 @@ HttpServer::HttpServer(Sensor *sensor) {
     this->sensor = sensor;
 }
 
-void HttpServer::launchServer() {
+void HttpServer::launchServer(const char *hostname) {
   WebServer *server = this->server;
-  float temperature = this->sensor->readTemperature();
+  Sensor *sensor = this->sensor;
+  
 
-  server->on("/", [server]() {
+  server->on("/", [server, hostname]() {
       Serial.println("Page is requested");
-      String htmlPage = String((const char*)html).substring(0, html_len);
-      htmlPage.replace("%IP%", WiFi.localIP().toString());
+      String htmlPage = String((const char*)html);
+      htmlPage.replace("%IP%", hostname);
       server->send(200, "text/html", htmlPage);
   });
 
-  server->on("/temperature", [server, temperature]() {
+  server->on("/temperature", [server, sensor]() {
+      float temperature = sensor->readTemperature();
       char jsonOut[200] = "{\"temperature\": ";
-      char buffer[10];
+      char buffer[15];
       dtostrf(temperature, 10, 2, buffer);
       strcat(jsonOut, buffer);
       strcat(jsonOut, "}");
       server->send(200, "application/json", jsonOut);
+  });
+
+  server->on("/favicon.ico", [server, hostname]() {
+      server->sendHeader("Content-Type", "image/x-icon");
+      server->sendHeader("Content-Length", String(favicon_len));
+      server->send_P(200, "image/x-icon", (const char*)favicon, favicon_len);
   });
 
   Serial.println("Launching server on port 80");

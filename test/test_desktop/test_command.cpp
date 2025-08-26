@@ -3,14 +3,14 @@
 
 
 void test_no_argument() {
-    Command cmd("help");
+    Command cmd("help\n");
     TEST_ASSERT_EQUAL_STRING("help", cmd.getCommand());
     TEST_ASSERT_EQUAL(0, cmd.argumentCount());
     TEST_ASSERT_EQUAL(false, cmd.hasArgument());
 }
 
 void test_one_argument() {
-    Command cmd("wifi-conf MySSID");
+    Command cmd("wifi-conf MySSID\n");
     TEST_ASSERT_EQUAL_STRING("wifi-conf", cmd.getCommand());
     TEST_ASSERT_EQUAL(1, cmd.argumentCount());
     TEST_ASSERT_EQUAL(true, cmd.hasArgument());
@@ -20,7 +20,7 @@ void test_one_argument() {
 }
 
 void test_two_arguments() {
-    Command cmd("wifi-conf MySSID MyPassword");
+    Command cmd("wifi-conf MySSID MyPassword\n");
     TEST_ASSERT_EQUAL_STRING("wifi-conf", cmd.getCommand());
     TEST_ASSERT_EQUAL(2, cmd.argumentCount());
     TEST_ASSERT_EQUAL(true, cmd.hasArgument());
@@ -33,7 +33,7 @@ void test_two_arguments() {
 }
 
 void test_extra_spaces() {
-    Command cmd("  wifi-conf   MySSID    MyPassword   ");
+    Command cmd("  wifi-conf   MySSID    MyPassword   \n");
     TEST_ASSERT_EQUAL_STRING("wifi-conf", cmd.getCommand());
     TEST_ASSERT_EQUAL(2, cmd.argumentCount());
     TEST_ASSERT_EQUAL(true, cmd.hasArgument());
