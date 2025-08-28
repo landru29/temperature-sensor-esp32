@@ -10,6 +10,7 @@ class HttpServer {
         void launchServer(const char *hostname);
         void stopServer();
         void handleClient();
+        void setSensor(Sensor *sensor);
     
     private:
         WebServer *server;

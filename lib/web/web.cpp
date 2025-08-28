@@ -8,14 +8,17 @@
 
 HttpServer::HttpServer(Sensor *sensor) {
     this->server = new WebServer(80);
+    this->setSensor(sensor);
+}
+
+void HttpServer::setSensor(Sensor *sensor) {
     this->sensor = sensor;
 }
 
 void HttpServer::launchServer(const char *hostname) {
   WebServer *server = this->server;
-  Sensor *sensor = this->sensor;
+  HttpServer* self = this;
   
-
   server->on("/", [server, hostname]() {
       Serial.println("Page is requested");
       String htmlPage = String((const char*)html);
@@ -23,8 +26,13 @@ void HttpServer::launchServer(const char *hostname) {
       server->send(200, "text/html", htmlPage);
   });
 
-  server->on("/temperature", [server, sensor]() {
-      float temperature = sensor->readTemperature();
+  server->on("/temperature", [server, self]() {
+      Sensor *sensor = self->sensor;
+      float temperature = 0;
+      if (sensor != NULL) {
+        temperature = sensor->readTemperature();
+      }
+      
       char jsonOut[200] = "{\"temperature\": ";
       char buffer[15];
       dtostrf(temperature, 10, 2, buffer);

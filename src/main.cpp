@@ -21,7 +21,7 @@ CommandManager *manager;
 void setup() {
   Serial.begin(9600);
 
-  sensor = new Sensor();
+  sensor = new Sensor(sensorGetWireNum(), sensorGetType());
   requestHandler = new HttpServer(sensor);
 
   inputString.reserve(200);
@@ -32,6 +32,10 @@ void setup() {
 
   manager = new CommandManager([](const char* data){
     Serial.write(data);
+  });
+
+  manager->on("restart", "Restart the system", [](Command *cmd){
+      ESP.restart();
   });
 
   manager->on("wifi-scan", "Scan available wifi networks", [](Command *cmd){
@@ -50,15 +54,29 @@ void setup() {
   manager->on("wifi-conf", "Configure wifi (<SSID> <password>)", [](Command *cmd){
       if (cmd->argumentCount()!=2) {
         Serial.println("ERROR: wifi-conf takes 2 arguments");
-
-        // Réinitialiser pour la prochaine commande
-        inputString = "";
-        stringComplete = false;
-        return;
       }
 
       configureWifi(cmd->nextArgument(), cmd->nextArgument());
       connectWifi(HOSTNAME);
+  });
+
+  manager->on("sensor-conf", "Configure sensor (<wireNum[2, 3, 4]> <type[pt100, pt1000]>)", [](Command *cmd){
+      if (cmd->argumentCount()!=2) {
+        Serial.println("ERROR: sensor-conf takes 2 arguments");
+      }
+
+      requestHandler->setSensor(NULL);
+      configureSensor(atoi(cmd->nextArgument()), cmd->nextArgument());
+      free(sensor);
+      sensor = new Sensor(sensorGetWireNum(), sensorGetType());
+      requestHandler->setSensor(sensor);
+  });
+
+  manager->on("sensor-status", "Display sensor configuration", [](Command *cmd){
+      currentSensor();
+      Serial.printf("Measure: %f\n", sensor->readTemperature());
+      Serial.printf("Ratio: %f\n", sensor->getRatio());
+      Serial.printf("Resistance: %f\n", sensor->getResistance());
   });
 
   manager->displayHelp();

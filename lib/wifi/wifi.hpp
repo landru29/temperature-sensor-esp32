@@ -1,5 +1,5 @@
 #ifndef __wifi_h__
-#include <Preferences.h>
+#include <Arduino.h>
 
 
 void listWifi();

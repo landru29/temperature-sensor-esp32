@@ -2,6 +2,7 @@
 #include "wifi.hpp"
 #include <Arduino.h>
 #include <WiFi.h>
+#include <Preferences.h>
 
 void listWifi() {
     Serial.println("Looking for available wifi ...");
@@ -44,7 +45,7 @@ void configureWifi(String ssid, String password) {
 bool connectWifi(const char* hostname) {
     Preferences preferences;
 
-    preferences.begin("wifi-creds", false);
+    preferences.begin("wifi-creds", true);
 
     if (!preferences.isKey("ssid")) {
         Serial.println("No wifi configured");
@@ -88,7 +89,7 @@ bool connectWifi(const char* hostname) {
 void currentWifi() {
     Preferences preferences;
 
-    preferences.begin("wifi-creds", false);
+    preferences.begin("wifi-creds", true);
 
     if (!preferences.isKey("ssid")) {
         Serial.println("No wifi configured");
