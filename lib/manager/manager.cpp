@@ -9,7 +9,7 @@ CommandHandler::CommandHandler(const char* command, const char* description, Com
     this->next = NULL;
 }
 
-CommandManager::CommandManager(OutputWriter writer) {
+CommandManager::CommandManager(Print *writer) {
     this->writer = writer;
     this->maxCommandSize=4;
 }
@@ -32,22 +32,22 @@ void CommandManager::on(const char* command, const char* description, CommandFun
 }
 
 void CommandManager::displayHelp() {
-    this->writer("help");
+    this->writer->print("help");
     for(int i=4; i<this->maxCommandSize; i++) {
-        this->writer(" ");
+        this->writer->print(" ");
     }
-    this->writer(" : Display this help\n");
+    this->writer->print(" : Display this help\n");
 
     for (CommandHandler* currentHandler = this->commandHandler;currentHandler != NULL; currentHandler=currentHandler->next) {
-        this->writer(currentHandler->trigger);
+        this->writer->print(currentHandler->trigger);
         for(int i=strlen(currentHandler->trigger); i<this->maxCommandSize; i++) {
-            this->writer(" ");
+            this->writer->print(" ");
         }
-        this->writer(" : ");
-        this->writer(currentHandler->description);
-        this->writer("\n");
+        this->writer->print(" : ");
+        this->writer->print(currentHandler->description);
+        this->writer->print("\n");
     }
-    this->writer("READY\n");
+    this->writer->print("READY\n");
 }
 
 void CommandManager::setCommand(Command *cmd) {
@@ -61,15 +61,15 @@ void CommandManager::setCommand(Command *cmd) {
     for (CommandHandler* currentHandler = this->commandHandler;currentHandler != NULL; currentHandler=currentHandler->next) {
         if (strcasecmp(currentHandler->trigger, command)==0) {
             (currentHandler->function)(cmd);
-            this->writer("READY\n");
+            this->writer->println("READY");
             return;
         }
 
         if (currentHandler->next == NULL) {
-            this->writer("Command not found: [");
-            this->writer(command);
-            this->writer("]\nType 'help' for the full command list.\n");
-            this->writer("READY\n");
+            this->writer->print("Command not found: [");
+            this->writer->print(command);
+            this->writer->print("]\nType 'help' for the full command list.\n");
+            this->writer->println("READY");
         }
     }
 }

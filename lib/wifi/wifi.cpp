@@ -4,29 +4,27 @@
 #include <WiFi.h>
 #include <Preferences.h>
 
-void listWifi() {
-    Serial.println("Looking for available wifi ...");
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
-    delay(100);
+WifiManager::WifiManager() {
+    Preferences preferences;
 
-    int n = WiFi.scanNetworks();
-    if (n==0) {
-    Serial.println("No wifi network found.");
-    } else {
-        for (int i = 0; i<n; i++) {
-            Serial.print(i+1);
-            Serial.print(": ");
-            Serial.print(WiFi.SSID(i));
-            Serial.print(" (");
-            Serial.print(WiFi.RSSI(i));
-            Serial.println(" dBm)");
-            delay(10);
-        }
-    }
+    preferences.begin("net", true);
+
+    String hostname = preferences.getString("hostname", "temperature");
+    this->_hostname = hostname.c_str();
+    preferences.end();
 }
 
-void configureWifi(String ssid, String password) {
+void WifiManager::setHostName(const char* hostname) {
+    this->_hostname = hostname;
+
+    Preferences preferences;
+
+    preferences.begin("net", false);
+    preferences.putString("hostname", this->_hostname);
+    preferences.end();
+}
+
+void WifiManager::configureWifi(String ssid, String password) {
     Serial.print("Configuring wifi with ssid ");
     Serial.print(ssid);
     Serial.print(" and password ");
@@ -42,8 +40,8 @@ void configureWifi(String ssid, String password) {
     preferences.end();
 }
 
-bool connectWifi(const char* hostname) {
-    Preferences preferences;
+bool WifiManager::connectWifi() {
+Preferences preferences;
 
     preferences.begin("wifi-creds", true);
 
@@ -61,7 +59,7 @@ bool connectWifi(const char* hostname) {
     Serial.print("Connecting to wifi ");
     Serial.println(ssid);
 
-    WiFi.setHostname(hostname);
+    WiFi.setHostname(this->_hostname);
     WiFi.begin(ssid.c_str(), password.c_str());
 
     Serial.println("Waiting response from the network ...");
@@ -86,7 +84,7 @@ bool connectWifi(const char* hostname) {
     return false;
 }
 
-void currentWifi() {
+void WifiManager::currentWifi() {
     Preferences preferences;
 
     preferences.begin("wifi-creds", true);
@@ -109,4 +107,32 @@ void currentWifi() {
     Serial.print(password);
     Serial.println("]");
 }
+
+const char* WifiManager::hostname() {
+    return this->_hostname;
+}
+
+
+void WifiManager::listWifi() {
+    Serial.println("Looking for available wifi ...");
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    delay(100);
+
+    int n = WiFi.scanNetworks();
+    if (n==0) {
+    Serial.println("No wifi network found.");
+    } else {
+        for (int i = 0; i<n; i++) {
+            Serial.print(i+1);
+            Serial.print(": ");
+            Serial.print(WiFi.SSID(i));
+            Serial.print(" (");
+            Serial.print(WiFi.RSSI(i));
+            Serial.println(" dBm)");
+            delay(10);
+        }
+    }
+}
+
 #endif
