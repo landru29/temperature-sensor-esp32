@@ -28,6 +28,12 @@ void HttpServer::launchServer(const char *hostname) {
 
   server->on("/temperature", [server, self]() {
       Sensor *sensor = self->sensor;
+      if (sensor == NULL) {
+        server->send(500, "application/json", "{\"error\": \"Sensor not configured\"}");
+        return;
+      }
+
+
       float temperature = 0;
       if (sensor != NULL) {
         temperature = sensor->readTemperature();

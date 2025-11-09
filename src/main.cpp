@@ -12,7 +12,7 @@
 String inputString = "";
 bool stringComplete = false;
 HttpServer *requestHandler;
-Sensor *sensor;
+Sensor *sensor = NULL;
 CommandManager *manager;
 WifiManager *wifiManager;
 Display *display;
@@ -24,11 +24,14 @@ void manager_init();
 
 void setup() {
   Serial.begin(9600);
+  Serial.println("Temperature Sensor ESP32");
 
-  sensor = new Sensor(sensorGetWireNum(), sensorGetType());
+  //sensor = new Sensor(sensorGetWireNum(), sensorGetType());
   requestHandler = new HttpServer(sensor);
   wifiManager = new WifiManager();
   display = new Display();
+
+  display->println("Temperature Sensor");
 
   inputString.reserve(200);
 
@@ -72,6 +75,13 @@ void timer_init() {
 }
 
 void IRAM_ATTR time_action() {
+  display->setCursor(0, 20);
+
+  if (sensor == NULL) {
+    display->println("No sensor");
+    return;
+  }
+  
   display->printf("%0.1f", sensor->readTemperature());
 }
 
