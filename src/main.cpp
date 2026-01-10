@@ -8,6 +8,7 @@
 #include "sensor.hpp"
 #include "manager.hpp"
 #include "display.hpp"
+#include "chonometer.hpp"
 
 String inputString = "";
 bool stringComplete = false;
@@ -19,6 +20,7 @@ Display *display;
 hw_timer_t *timer = NULL;
 volatile bool timerFlag = false;
 float lastTemperature = 0.0;
+Chronometer *chronometer;
 
 void IRAM_ATTR time_action();
 void timer_init();
@@ -35,6 +37,8 @@ void setup() {
   display = new Display();
 
   display->println("Temperature Sensor");
+
+  chronometer = new Chronometer(display);
 
   inputString.reserve(200);
 
@@ -71,6 +75,7 @@ void loop() {
 
   if (timerFlag) {
     displayTemparature();
+    chronometer->display();
   }
 }
 
@@ -83,6 +88,7 @@ void timer_init() {
 
 void IRAM_ATTR time_action() {
    timerFlag = true;
+   chronometer->tick();
 }
 
 void displayTemparature() {
@@ -91,6 +97,8 @@ void displayTemparature() {
   display->fillRect(0, 16, 127, 16, SSD1306_BLACK, false);
 
   float currentTemp = sensor->readTemperature();
+  chronometer->setEnabled(currentTemp);
+  
   bool sign = (currentTemp - lastTemperature) >= 0;
   float diff = sign ? (currentTemp - lastTemperature) : (lastTemperature - currentTemp);
 
@@ -106,6 +114,7 @@ void displayTemparature() {
 
   timerFlag = false;
 }
+
 
 void manager_init() {
   manager = new CommandManager(&Serial);
@@ -137,6 +146,18 @@ void manager_init() {
 
     wifiManager->configureWifi(cmd->nextArgument(), cmd->nextArgument());
     wifiManager->connectWifi();
+  });
+
+  manager->on("chrono-threshold", "Set temperature to start the chronometer", [](Command *cmd) {
+    if (cmd->argumentCount()!=1) {
+      Serial.println("ERROR: chrono-threshold takes 1 argument");
+      Serial.printf("current threshold: %f seconds\n", chronometer->getThreshold());
+      return;
+    }
+
+    float threshold = atof(cmd->nextArgument());
+    chronometer->setThreshold(threshold);
+    Serial.printf("New chronometer threshold : %f seconds\n", threshold);
   });
 
   manager->on("Hostname", "Configure hostname (<hostname>)", [](Command *cmd) {
