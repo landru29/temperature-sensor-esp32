@@ -18,10 +18,10 @@ typedef enum sensor_type {
 } sensor_type_t;
 
 // CS PIN
-#define MAX_CS   10
-#define MAX_MOSI 11
-#define MAX_MISO 12
-#define MAX_CLK  13
+#define MAX_CS   2
+#define MAX_MOSI 13
+#define MAX_MISO 14
+#define MAX_CLK  15
 
 void configureSensor(int wireCount, char* sensorType);
 sensor_numwires_t sensorGetWireNum();

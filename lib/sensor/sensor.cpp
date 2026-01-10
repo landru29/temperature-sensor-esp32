@@ -10,7 +10,7 @@ void configureSensor(int wireCount, char* sensorType) {
     if (strcasecmp(sensorType, "PT100") == 0) {
         Serial.println("PT100");
         sensorType=(char*)"PT100";
-    } else if (strcasecmp(sensorType, "PT100") == 0) {
+    } else if (strcasecmp(sensorType, "PT1000") == 0) {
         Serial.println("PT1000");
         sensorType=(char*)"PT1000";
     } else {
@@ -147,6 +147,11 @@ Sensor::Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor) {
 float Sensor::readTemperature() {
     uint16_t rtd = this->max->readRTD();
     float ratio = rtd;
+
+    Serial.print("RTD value: "); Serial.println(rtd);
+    Serial.print("Ratio: "); Serial.println(ratio / 32768);
+    Serial.print("Resistance: "); Serial.println(this->resistorRef * ratio);
+    Serial.print("Temperature: "); Serial.println(this->max->temperature(this->resistorNominal, this->resistorRef));
 
     this->currentRatio = ratio / 32768;
     this->currentResistance = this->resistorRef * ratio;

@@ -17,16 +17,19 @@ CommandManager *manager;
 WifiManager *wifiManager;
 Display *display;
 hw_timer_t *timer = NULL;
+volatile bool timerFlag = false;
+float lastTemperature = 0.0;
 
 void IRAM_ATTR time_action();
 void timer_init();
 void manager_init();
+void displayTemparature();
 
 void setup() {
   Serial.begin(9600);
   Serial.println("Temperature Sensor ESP32");
 
-  //sensor = new Sensor(sensorGetWireNum(), sensorGetType());
+  sensor = new Sensor(sensorGetWireNum(), sensorGetType());
   requestHandler = new HttpServer(sensor);
   wifiManager = new WifiManager();
   display = new Display();
@@ -65,6 +68,10 @@ void loop() {
   }
 
   requestHandler->handleClient();
+
+  if (timerFlag) {
+    displayTemparature();
+  }
 }
 
 void timer_init() {
@@ -75,14 +82,29 @@ void timer_init() {
 }
 
 void IRAM_ATTR time_action() {
+   timerFlag = true;
+}
+
+void displayTemparature() {
   display->setCursor(0, 20);
+
+  display->fillRect(0, 16, 127, 16, SSD1306_BLACK, false);
+
+  float currentTemp = sensor->readTemperature();
+  bool sign = (currentTemp - lastTemperature) >= 0;
+  float diff = sign ? (currentTemp - lastTemperature) : (lastTemperature - currentTemp);
+
+  char arrow = sign ? 0x18 : 0x19;
 
   if (sensor == NULL) {
     display->println("No sensor");
-    return;
+  } else {
+    display->printf("%3.1f%c   %c %1.1f %c", currentTemp, 0xf7, arrow, diff, arrow);
   }
-  
-  display->printf("%0.1f", sensor->readTemperature());
+
+  lastTemperature = currentTemp;
+
+  timerFlag = false;
 }
 
 void manager_init() {

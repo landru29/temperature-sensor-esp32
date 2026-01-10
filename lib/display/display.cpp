@@ -54,5 +54,17 @@ size_t Display::write(uint8_t character) {
     return 1;
 }
 
+void Display::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, bool render) {
+    if (this->screen == nullptr) {
+        return;
+    }
+
+    this->screen->fillRect(x, y, w, h, color);
+
+    if (render) {
+        this->screen->display();
+    }
+}
+
 
 #endif
