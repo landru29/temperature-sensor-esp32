@@ -27,14 +27,17 @@ void configureSensor(int wireCount, char* sensorType);
 sensor_numwires_t sensorGetWireNum();
 sensor_type_t sensorGetType();
 void currentSensor();
+void adjustSensorResistor(float error);
+float getSensorResistorError();
 
 
 class Sensor {
     public:
-        Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor);
+        Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor, float resistorError=0.0);
         float readTemperature();
         float getRatio();
         float getResistance();
+        float getRefResistance();
     private:
 #ifndef TESTING 
         Adafruit_MAX31865 *max;

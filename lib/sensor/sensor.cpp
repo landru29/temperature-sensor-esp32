@@ -1,5 +1,31 @@
 #include "sensor.hpp"
 
+void adjustSensorResistor(float error) {
+#ifndef TESTING 
+    Preferences preferences;
+    preferences.begin("sensor", false);
+    preferences.putFloat("resistorError", error);
+    preferences.end();
+#endif
+}
+
+float getSensorResistorError() {
+#ifndef TESTING 
+    Preferences preferences;
+    preferences.begin("sensor", true);
+    if (!preferences.isKey("resistorError")) {
+        preferences.end();
+        return 0.0;
+    }
+    
+    float error = preferences.getFloat("resistorError", 0.0);
+    preferences.end();
+
+    return error;
+#else
+    return 0.0;
+#endif
+}
 
 void configureSensor(int wireCount, char* sensorType) {
 #ifndef TESTING 
@@ -74,6 +100,13 @@ void currentSensor() {
         Serial.println(preferences.getString("type"));
     }
 
+    if (!preferences.isKey("resistorError")) {
+        Serial.println("No resistor error configured. Default 0.0");
+    } else {
+        Serial.print("Resistor error: ");
+        Serial.println(preferences.getFloat("resistorError"));
+    }
+
     preferences.end();
 #endif
 }
@@ -100,7 +133,7 @@ sensor_type_t sensorGetType() {
 
 #ifdef TESTING
 
-Sensor::Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor) {
+Sensor::Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor, float resistorError) {
 }
 
 float Sensor::readTemperature() {
@@ -111,7 +144,7 @@ float Sensor::readTemperature() {
 
 #include <Arduino.h>
 
-Sensor::Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor) {
+Sensor::Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor, float resistorError) {
     this->max = new Adafruit_MAX31865(MAX_CS, MAX_MOSI, MAX_MISO, MAX_CLK);
     this->resistorRef = 430.0;
     this->resistorNominal = 100.0;
@@ -123,6 +156,8 @@ Sensor::Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor) {
         this->resistorRef *= 10;
         this->resistorNominal *= 10;
     }
+
+    this->resistorRef += resistorError;
 
     max31865_numwires_t maxNumWire = MAX31865_2WIRE;
     switch (wireCount) {
@@ -144,14 +179,13 @@ Sensor::Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor) {
     }
 }
 
+float Sensor::getRefResistance() {
+    return this->resistorRef;
+}   
+
 float Sensor::readTemperature() {
     uint16_t rtd = this->max->readRTD();
     float ratio = rtd;
-
-    Serial.print("RTD value: "); Serial.println(rtd);
-    Serial.print("Ratio: "); Serial.println(ratio / 32768);
-    Serial.print("Resistance: "); Serial.println(this->resistorRef * ratio);
-    Serial.print("Temperature: "); Serial.println(this->max->temperature(this->resistorNominal, this->resistorRef));
 
     this->currentRatio = ratio / 32768;
     this->currentResistance = this->resistorRef * ratio;

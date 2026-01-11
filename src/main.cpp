@@ -31,7 +31,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Temperature Sensor ESP32");
 
-  sensor = new Sensor(sensorGetWireNum(), sensorGetType());
+  sensor = new Sensor(sensorGetWireNum(), sensorGetType(), getSensorResistorError());
   requestHandler = new HttpServer(sensor);
   wifiManager = new WifiManager();
   display = new Display();
@@ -151,13 +151,13 @@ void manager_init() {
   manager->on("chrono-threshold", "Set temperature to start the chronometer", [](Command *cmd) {
     if (cmd->argumentCount()!=1) {
       Serial.println("ERROR: chrono-threshold takes 1 argument");
-      Serial.printf("current threshold: %f seconds\n", chronometer->getThreshold());
+      Serial.printf("current threshold: %.1f°c\n", chronometer->getThreshold());
       return;
     }
 
     float threshold = atof(cmd->nextArgument());
     chronometer->setThreshold(threshold);
-    Serial.printf("New chronometer threshold : %f seconds\n", threshold);
+    Serial.printf("New chronometer threshold : %.1f°c\n", threshold);
   });
 
   manager->on("Hostname", "Configure hostname (<hostname>)", [](Command *cmd) {
@@ -180,8 +180,25 @@ void manager_init() {
     requestHandler->setSensor(NULL);
     configureSensor(atoi(cmd->nextArgument()), cmd->nextArgument());
     free(sensor);
-    sensor = new Sensor(sensorGetWireNum(), sensorGetType());
+    sensor = new Sensor(sensorGetWireNum(), sensorGetType(), getSensorResistorError());
     requestHandler->setSensor(sensor);
+  });
+
+  manager->on("sensor-ref", "Modify reference resistance", [](Command *cmd) {
+    if (cmd->argumentCount()!=1) {
+      Serial.println("ERROR: sensor-ref takes 1 argument");
+      Serial.printf("current resistor error: %.3f ohm\n", getSensorResistorError());
+      return;
+    }
+
+    float error = atof(cmd->nextArgument());
+    adjustSensorResistor(error);
+    free(sensor);
+    sensor = new Sensor(sensorGetWireNum(), sensorGetType(), getSensorResistorError());
+    requestHandler->setSensor(sensor);
+    Serial.printf("New resistor error : %.3f ohm\n", getSensorResistorError());
+    Serial.printf("Ref Resistance: %f ohm\n", sensor->getRefResistance());
+    Serial.printf("Measure: %f\n", sensor->readTemperature());
   });
 
   manager->on("sensor-status", "Display sensor configuration", [](Command *cmd) {
@@ -189,6 +206,7 @@ void manager_init() {
     Serial.printf("Measure: %f\n", sensor->readTemperature());
     Serial.printf("Ratio: %f\n", sensor->getRatio());
     Serial.printf("Resistance: %f\n", sensor->getResistance());
+    Serial.printf("Ref Resistance: %f ohm\n", sensor->getRefResistance());
   });
 
   manager->displayHelp();
