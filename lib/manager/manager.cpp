@@ -12,6 +12,7 @@ CommandHandler::CommandHandler(const char* command, const char* description, Com
 CommandManager::CommandManager(Print *writer) {
     this->writer = writer;
     this->maxCommandSize=4;
+    this->commandHandler = NULL;
 }
 
 void CommandManager::on(const char* command, const char* description, CommandFunction callback) {

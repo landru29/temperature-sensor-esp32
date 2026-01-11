@@ -7,9 +7,16 @@
 WifiManager::WifiManager() {
     Preferences preferences;
 
-    preferences.begin("net", true);
+    if (!preferences.begin("net", false)) {
+        Serial.println("Failed to open preferences for reading hostname");
+    }
 
-    String hostname = preferences.getString("hostname", "temperature");
+    String hostname = "temperature";
+
+    if (preferences.isKey("hostname")) {
+        hostname = preferences.getString("hostname", "temperature");
+    }
+    
     this->_hostname = hostname.c_str();
     preferences.end();
 }
@@ -19,7 +26,10 @@ void WifiManager::setHostName(const char* hostname) {
 
     Preferences preferences;
 
-    preferences.begin("net", false);
+    if (!preferences.begin("net", false)) {
+        Serial.println("Failed to open preferences for writing hostname");
+    }
+
     preferences.putString("hostname", this->_hostname);
     preferences.end();
 }
@@ -41,9 +51,12 @@ void WifiManager::configureWifi(String ssid, String password) {
 }
 
 bool WifiManager::connectWifi() {
-Preferences preferences;
+    Preferences preferences;
 
-    preferences.begin("wifi-creds", true);
+    if (!preferences.begin("wifi-creds", false)) {
+        Serial.println("Failed to open preferences for reading wifi credentials");
+        return false;
+    }
 
     if (!preferences.isKey("ssid")) {
         Serial.println("No wifi configured");
@@ -87,7 +100,10 @@ Preferences preferences;
 void WifiManager::currentWifi() {
     Preferences preferences;
 
-    preferences.begin("wifi-creds", true);
+    if (!preferences.begin("wifi-creds", false)) {
+        Serial.println("Failed to open preferences for reading wifi credentials");
+        return;
+    }
 
     if (!preferences.isKey("ssid")) {
         Serial.println("No wifi configured");

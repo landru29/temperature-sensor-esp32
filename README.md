@@ -15,8 +15,8 @@ This project is designed for an ESP32. Personaly, I use an ESP32 with an integra
 ![ESP32 with oled screen](pics/esp32.jpg "ESP32")
 
 If you want to connect your own oled screen, please use the following pins:
-- GPIO21 (SCL)
-- GPIO22 (SDA)
+- GPIO4 (SCL)
+- GPIO5 (SDA)
 
 ### Sensor
 
