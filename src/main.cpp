@@ -31,7 +31,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Temperature Sensor ESP32");
 
-  sensor = new Sensor(sensorGetWireNum(), sensorGetType(), getSensorResistorError());
+  sensor = new Sensor();
   requestHandler = new HttpServer(sensor);
   wifiManager = new WifiManager();
   display = new Display();
@@ -178,35 +178,29 @@ void manager_init() {
     }
 
     requestHandler->setSensor(NULL);
-    configureSensor(atoi(cmd->nextArgument()), cmd->nextArgument());
-    free(sensor);
-    sensor = new Sensor(sensorGetWireNum(), sensorGetType(), getSensorResistorError());
-    requestHandler->setSensor(sensor);
+    sensor->configureSensor(atoi(cmd->nextArgument()), cmd->nextArgument());
   });
 
   manager->on("sensor-ref", "Modify reference resistance", [](Command *cmd) {
     if (cmd->argumentCount()!=1) {
       Serial.println("ERROR: sensor-ref takes 1 argument");
-      Serial.printf("current resistor error: %.3f ohm\n", getSensorResistorError());
+      Serial.printf("current resistor error: %.3f ohm\n", sensor->getResistorError());
       return;
     }
 
     float error = atof(cmd->nextArgument());
-    adjustSensorResistor(error);
-    free(sensor);
-    sensor = new Sensor(sensorGetWireNum(), sensorGetType(), getSensorResistorError());
-    requestHandler->setSensor(sensor);
-    Serial.printf("New resistor error : %.3f ohm\n", getSensorResistorError());
+    sensor->adjustSensorResistor(error);
+    Serial.printf("New resistor error : %.3f ohm\n", sensor->getResistorError());
     Serial.printf("Ref Resistance: %f ohm\n", sensor->getRefResistance());
     Serial.printf("Measure: %f\n", sensor->readTemperature());
   });
 
   manager->on("sensor-status", "Display sensor configuration", [](Command *cmd) {
-    currentSensor();
     Serial.printf("Measure: %f\n", sensor->readTemperature());
     Serial.printf("Ratio: %f\n", sensor->getRatio());
     Serial.printf("Resistance: %f\n", sensor->getResistance());
     Serial.printf("Ref Resistance: %f ohm\n", sensor->getRefResistance());
+    Serial.printf("New resistor error : %.3f ohm\n", sensor->getResistorError());
   });
 
   manager->displayHelp();
