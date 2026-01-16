@@ -30,9 +30,25 @@ As I use a 4-wire thermicouple, no modification has to be done on the driver. If
 
 ![thermocouple driver](pics/max31865.jpg "MAX31864")
 
+## Wiring
+
+Apply the following wiring. 
+
+**! It seems that the program upload is not possible when all is wired ! ** That's why I use a connector, so that I can disconnect the MAX31865 during the program upload.
+
+![Wiring](pics/wiring01.jpg "Wiring")
+
+![Wiring](pics/wiring02.jpg "Wiring")
+
 ## Usage
 
 Once the project uploaded on your ESP32, connect toyour machine and open a Serial Console.
+
+```bash
+cd cmd
+make
+./monitor
+```
 
 Type `help` to list the available commandes.
 
