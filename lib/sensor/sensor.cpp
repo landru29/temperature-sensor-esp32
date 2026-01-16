@@ -1,116 +1,5 @@
 #include "sensor.hpp"
 
-void adjustSensorResistor(float error) {
-#ifndef TESTING 
-    Preferences preferences;
-    preferences.begin("sensor", false);
-    preferences.putFloat("resistorError", error);
-    preferences.end();
-#endif
-}
-
-float getSensorResistorError() {
-#ifndef TESTING 
-    Preferences preferences;
-    preferences.begin("sensor", true);
-    if (!preferences.isKey("resistorError")) {
-        preferences.end();
-        return 0.0;
-    }
-    
-    float error = preferences.getFloat("resistorError", 0.0);
-    preferences.end();
-
-    return error;
-#else
-    return 0.0;
-#endif
-}
-
-void configureSensor(int wireCount, char* sensorType) {
-#ifndef TESTING 
-    Serial.print("Configuring sensor with ");
-    Serial.print(wireCount);
-    Serial.print(" and type ");
-
-    if (strcasecmp(sensorType, "PT100") == 0) {
-        Serial.println("PT100");
-        sensorType=(char*)"PT100";
-    } else if (strcasecmp(sensorType, "PT1000") == 0) {
-        Serial.println("PT1000");
-        sensorType=(char*)"PT1000";
-    } else {
-        Serial.println("unknown");
-    }
-
-
-    char wireCountStr[16];
-    itoa(wireCount, wireCountStr, 10);   
-
-    Preferences preferences;
-
-    preferences.begin("sensor", false);
-
-    preferences.putString("wireNum", wireCountStr);
-    preferences.putString("type", sensorType);
-
-    preferences.end();
-#endif
-}
-
-sensor_numwires_t sensorGetWireNum() {
-#ifndef TESTING 
-    Preferences preferences;
-
-    preferences.begin("sensor", true);
-    String wireNumStr = preferences.getString("wireNum", "");
-    preferences.end();
-
-    if (wireNumStr = "2") {
-        return SENSOR_2WIRE;
-    } else if (wireNumStr = "3") {
-        return SENSOR_3WIRE;
-    } else if (wireNumStr = "4") {
-        return SENSOR_4WIRE;
-    }
-    
-    return SENSOR_4WIRE;
-#else
-    return SENSOR_4WIRE;
-#endif
-}
-
-void currentSensor() {
-#ifndef TESTING 
-    Preferences preferences;
-
-    preferences.begin("sensor", true);
-
-    if (!preferences.isKey("wireNum")) {
-        Serial.println("No wire num configured. Default 4");
-    } else {
-        Serial.print("Wire num: ");
-        Serial.println(preferences.getString("wireNum"));
-    }
-
-    if (!preferences.isKey("type")) {
-        Serial.println("No type configured. Default PT100");
-    } else {
-        Serial.print("Type: ");
-        Serial.println(preferences.getString("type"));
-    }
-
-    if (!preferences.isKey("resistorError")) {
-        Serial.println("No resistor error configured. Default 0.0");
-    } else {
-        Serial.print("Resistor error: ");
-        Serial.println(preferences.getFloat("resistorError"));
-    }
-
-    preferences.end();
-#endif
-}
-
 sensor_type_t sensorGetType() {
 #ifndef TESTING 
     Preferences preferences;
@@ -133,7 +22,7 @@ sensor_type_t sensorGetType() {
 
 #ifdef TESTING
 
-Sensor::Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor, float resistorError) {
+Sensor::Sensor() {
 }
 
 float Sensor::readTemperature() {
@@ -144,23 +33,18 @@ float Sensor::readTemperature() {
 
 #include <Arduino.h>
 
-Sensor::Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor, float resistorError) {
-    this->max = new Adafruit_MAX31865(MAX_CS, MAX_MOSI, MAX_MISO, MAX_CLK);
-    this->resistorRef = 430.0;
+Sensor::Sensor() {
+    this->reloadConfig();
+}
+
+void Sensor::reloadConfig() {
     this->resistorNominal = 100.0;
     this->currentRatio = 0;
     this->currentResistance = 0;
     this->currentTemperature = 0;
 
-    if (typeOfSensor == SENSOR_PT1000) {
-        this->resistorRef *= 10;
-        this->resistorNominal *= 10;
-    }
-
-    this->resistorRef += resistorError;
-
     max31865_numwires_t maxNumWire = MAX31865_2WIRE;
-    switch (wireCount) {
+    switch (this->sensorGetWireNum()) {
         case SENSOR_2WIRE:
             maxNumWire = MAX31865_2WIRE;
             break;
@@ -172,12 +56,97 @@ Sensor::Sensor(sensor_numwires_t wireCount, sensor_type typeOfSensor, float resi
             break;
     }
 
+    this->resistorRef = 430.0;
+
+    if (this->sensorGetType() == SENSOR_PT1000) {
+        this->resistorRef *= 10;
+        this->resistorNominal *= 10;
+    }
+
+    this->resistorRef += this->getResistorError();
+
+    this->max = new Adafruit_MAX31865(MAX_CS, MAX_MOSI, MAX_MISO, MAX_CLK);
+    
     if (!this->max->begin(maxNumWire)) {
         Serial.println("Error: could not establish communication with the sensor.");
-
-        while(1);
     }
 }
+
+void Sensor::adjustSensorResistor(float error) {
+    Preferences preferences;
+    preferences.begin("sensor", false);
+    preferences.putFloat("resistorError", error);
+    preferences.end();
+
+    this->reloadConfig();
+}
+
+float Sensor::getResistorError() {
+    Preferences preferences;
+    preferences.begin("sensor", true);
+    float error = preferences.getFloat("resistorError", 0.0);
+    preferences.end();
+
+    return error;
+}
+
+sensor_numwires_t Sensor::sensorGetWireNum() {
+    Preferences preferences;
+
+    preferences.begin("sensor", true);
+    String wireNumStr = preferences.getString("wireNum", "");
+    preferences.end();
+
+    if (wireNumStr = "2") {
+        return SENSOR_2WIRE;
+    } else if (wireNumStr = "3") {
+        return SENSOR_3WIRE;
+    } else if (wireNumStr = "4") {
+        return SENSOR_4WIRE;
+    }
+    
+    return SENSOR_4WIRE;
+}
+
+sensor_type_t Sensor::sensorGetType() {
+    Preferences preferences;
+    preferences.begin("sensor", true);
+    String sensorTypeStr = preferences.getString("type", "");
+    preferences.end();
+
+    if (sensorTypeStr = "PT100") {
+        return SENSOR_PT100;
+    } else if (sensorTypeStr = "PT1000") {
+        return SENSOR_PT1000;
+    }
+
+    return SENSOR_PT100;
+}
+
+void Sensor::configureSensor(int wireCount, char* sensorType) {
+    if (strcasecmp(sensorType, "PT100") == 0) {
+        sensorType=(char*)"PT100";
+    } else if (strcasecmp(sensorType, "PT1000") == 0) {
+        sensorType=(char*)"PT1000";
+    } else {
+        Serial.println("unknown");
+    }
+
+    char wireCountStr[16];
+    itoa(wireCount, wireCountStr, 10);   
+
+    Preferences preferences;
+
+    preferences.begin("sensor", false);
+
+    preferences.putString("wireNum", wireCountStr);
+    preferences.putString("type", sensorType);
+
+    preferences.end();
+
+    this->reloadConfig();
+}
+
 
 float Sensor::getRefResistance() {
     return this->resistorRef;
